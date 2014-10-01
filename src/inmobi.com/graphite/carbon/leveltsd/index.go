@@ -31,6 +31,7 @@ type indices struct {
 	wo        *levigo.WriteOptions
 	ro        *levigo.ReadOptions
 	cache     *levigo.Cache
+	filter    *levigo.FilterPolicy
 }
 
 type metricIndex struct {
@@ -230,6 +231,7 @@ func (this *indices) release() {
 	this.ro.Close()
 	this.wo.Close()
 	this.cache.Close()
+	this.filter.Close()
 }
 
 /* Carbon daemon has a long history of characters unacceptable in an metric
@@ -288,6 +290,9 @@ func mkIndex(root string) (*indices, error) {
 
 	cache := levigo.NewLRUCache(INDEX_CACHE_SIZE)
 	opts.SetCache(cache)
+
+	retval.filter = levigo.NewBloomFilter(10)
+	opts.SetFilterPolicy(retval.filter)
 
 	defer func() {
         if r := recover(); r != nil {
